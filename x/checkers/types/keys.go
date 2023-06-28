@@ -55,3 +55,10 @@ const (
 const (
     NoFifoIndex = "-1"
 )
+
+const (
+    GameForfeitedEventType      = "game-forfeited"
+    GameForfeitedEventGameIndex = "game-index"
+    GameForfeitedEventWinner    = "winner"
+    GameForfeitedEventBoard     = "board"
+)
