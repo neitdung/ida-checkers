@@ -67,6 +67,15 @@ paths:
                       type: string
                     winner:
                       type: string
+                    deadline:
+                      type: string
+                    moveCount:
+                      type: string
+                      format: uint64
+                    beforeIndex:
+                      type: string
+                    afterIndex:
+                      type: string
               pagination:
                 type: object
                 properties:
@@ -196,6 +205,15 @@ paths:
                     type: string
                   winner:
                     type: string
+                  deadline:
+                    type: string
+                  moveCount:
+                    type: string
+                    format: uint64
+                  beforeIndex:
+                    type: string
+                  afterIndex:
+                    type: string
         default:
           description: An unexpected error response.
           schema:
@@ -237,6 +255,10 @@ paths:
                   nextId:
                     type: string
                     format: uint64
+                  fifoHeadIndex:
+                    type: string
+                  fifoTailIndex:
+                    type: string
         default:
           description: An unexpected error response.
           schema:
@@ -29749,6 +29771,15 @@ definitions:
               type: string
             winner:
               type: string
+            deadline:
+              type: string
+            moveCount:
+              type: string
+              format: uint64
+            beforeIndex:
+              type: string
+            afterIndex:
+              type: string
       pagination:
         type: object
         properties:
@@ -29792,6 +29823,15 @@ definitions:
             type: string
           winner:
             type: string
+          deadline:
+            type: string
+          moveCount:
+            type: string
+            format: uint64
+          beforeIndex:
+            type: string
+          afterIndex:
+            type: string
   alice.checkers.checkers.QueryGetSystemInfoResponse:
     type: object
     properties:
@@ -29801,6 +29841,10 @@ definitions:
           nextId:
             type: string
             format: uint64
+          fifoHeadIndex:
+            type: string
+          fifoTailIndex:
+            type: string
   alice.checkers.checkers.QueryParamsResponse:
     type: object
     properties:
@@ -29823,12 +29867,25 @@ definitions:
         type: string
       winner:
         type: string
+      deadline:
+        type: string
+      moveCount:
+        type: string
+        format: uint64
+      beforeIndex:
+        type: string
+      afterIndex:
+        type: string
   alice.checkers.checkers.SystemInfo:
     type: object
     properties:
       nextId:
         type: string
         format: uint64
+      fifoHeadIndex:
+        type: string
+      fifoTailIndex:
+        type: string
   cosmos.base.query.v1beta1.PageRequest:
     type: object
     properties:

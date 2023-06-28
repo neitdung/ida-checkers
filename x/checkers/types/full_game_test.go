@@ -23,6 +23,8 @@ func GetStoredGame1() types.StoredGame {
 		Index: "1",
 		Board: rules.New().String(),
 		Turn:  "b",
+		Winner: "*",
+		Deadline: types.DeadlineLayout,
 	}
 }
 
