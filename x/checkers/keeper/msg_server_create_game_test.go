@@ -24,6 +24,7 @@ func TestCreateGame(t *testing.T) {
 		Creator: alice,
 		Black:   bob,
 		Red:     carol,
+		Wager:   45,
 	})
 	require.Nil(t, err)
 	require.EqualValues(t, types.MsgCreateGameResponse{
@@ -38,22 +39,29 @@ func TestCreate1GameHasSaved(t *testing.T) {
 		Creator: alice,
 		Black:   bob,
 		Red:     carol,
+		Wager:   45,
 	})
 	systemInfo, found := keeper.GetSystemInfo(ctx)
 	require.True(t, found)
 	require.EqualValues(t, types.SystemInfo{
-		NextId: 2,
+		NextId:        2,
+		FifoHeadIndex: "1",
+		FifoTailIndex: "1",
 	}, systemInfo)
 	game1, found1 := keeper.GetStoredGame(ctx, "1")
 	require.True(t, found1)
 	require.EqualValues(t, types.StoredGame{
-		Index: "1",
-		Board: "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
-		Turn:  "b",
-		Black: bob,
-		Red:   carol,
-		Winner: "*",
-		Deadline:  types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		Index:       "1",
+		Board:       "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
+		Turn:        "b",
+		Black:       bob,
+		Red:         carol,
+		Winner:      "*",
+		Deadline:    types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		MoveCount:   0,
+		BeforeIndex: "-1",
+		AfterIndex:  "-1",
+		Wager:       45,
 	}, game1)
 }
 
@@ -64,17 +72,22 @@ func TestCreate1GameGetAll(t *testing.T) {
 		Creator: alice,
 		Black:   bob,
 		Red:     carol,
+		Wager:   45,
 	})
-	games := keeper.GetAllStoredGame(sdk.UnwrapSDKContext(context))
+	games := keeper.GetAllStoredGame(ctx)
 	require.Len(t, games, 1)
 	require.EqualValues(t, types.StoredGame{
-		Index: "1",
-		Board: "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
-		Turn:  "b",
-		Black: bob,
-		Red:   carol,
-		Winner: "*",
-		Deadline:  types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		Index:       "1",
+		Board:       "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
+		Turn:        "b",
+		Black:       bob,
+		Red:         carol,
+		Winner:      "*",
+		Deadline:    types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		MoveCount:   0,
+		BeforeIndex: "-1",
+		AfterIndex:  "-1",
+		Wager:       45,
 	}, games[0])
 }
 
@@ -85,6 +98,7 @@ func TestCreate1GameEmitted(t *testing.T) {
 		Creator: alice,
 		Black:   bob,
 		Red:     carol,
+		Wager:   45,
 	})
 	require.NotNil(t, ctx)
 	events := sdk.StringifyEvents(ctx.EventManager().ABCIEvents())
@@ -97,6 +111,7 @@ func TestCreate1GameEmitted(t *testing.T) {
 			{Key: "game-index", Value: "1"},
 			{Key: "black", Value: bob},
 			{Key: "red", Value: carol},
+			{Key: "wager", Value: "45"},
 		},
 	}, event)
 }
@@ -107,6 +122,7 @@ func TestCreateGameRedAddressBad(t *testing.T) {
 		Creator: alice,
 		Black:   bob,
 		Red:     "notanaddress",
+		Wager:   45,
 	})
 	require.Nil(t, createResponse)
 	require.Equal(t,
@@ -120,6 +136,7 @@ func TestCreateGameEmptyRedAddress(t *testing.T) {
 		Creator: alice,
 		Black:   bob,
 		Red:     "",
+		Wager:   45,
 	})
 	require.Nil(t, createResponse)
 	require.Equal(t,
@@ -133,11 +150,13 @@ func TestCreate3Games(t *testing.T) {
 		Creator: alice,
 		Black:   bob,
 		Red:     carol,
+		Wager:   45,
 	})
 	createResponse2, err2 := msgSrvr.CreateGame(context, &types.MsgCreateGame{
 		Creator: bob,
 		Black:   carol,
 		Red:     alice,
+		Wager:   46,
 	})
 	require.Nil(t, err2)
 	require.EqualValues(t, types.MsgCreateGameResponse{
@@ -147,6 +166,7 @@ func TestCreate3Games(t *testing.T) {
 		Creator: carol,
 		Black:   alice,
 		Red:     bob,
+		Wager:   47,
 	})
 	require.Nil(t, err3)
 	require.EqualValues(t, types.MsgCreateGameResponse{
@@ -161,54 +181,71 @@ func TestCreate3GamesHasSaved(t *testing.T) {
 		Creator: alice,
 		Black:   bob,
 		Red:     carol,
+		Wager:   45,
 	})
 	msgSrvr.CreateGame(context, &types.MsgCreateGame{
 		Creator: bob,
 		Black:   carol,
 		Red:     alice,
+		Wager:   46,
 	})
 	msgSrvr.CreateGame(context, &types.MsgCreateGame{
 		Creator: carol,
 		Black:   alice,
 		Red:     bob,
+		Wager:   47,
 	})
 	systemInfo, found := keeper.GetSystemInfo(ctx)
 	require.True(t, found)
 	require.EqualValues(t, types.SystemInfo{
-		NextId: 4,
+		NextId:        4,
+		FifoHeadIndex: "1",
+		FifoTailIndex: "3",
 	}, systemInfo)
 	game1, found1 := keeper.GetStoredGame(ctx, "1")
 	require.True(t, found1)
 	require.EqualValues(t, types.StoredGame{
-		Index: "1",
-		Board: "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
-		Turn:  "b",
-		Black: bob,
-		Red:   carol,
-		Winner: "*",
-		Deadline:  types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		Index:       "1",
+		Board:       "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
+		Turn:        "b",
+		Black:       bob,
+		Red:         carol,
+		Winner:      "*",
+		Deadline:    types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		MoveCount:   0,
+		BeforeIndex: "-1",
+		AfterIndex:  "2",
+		Wager:       45,
 	}, game1)
 	game2, found2 := keeper.GetStoredGame(ctx, "2")
 	require.True(t, found2)
 	require.EqualValues(t, types.StoredGame{
-		Index: "2",
-		Board: "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
-		Turn:  "b",
-		Black: carol,
-		Red:   alice,
-		Winner: "*",
-		Deadline:  types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		Index:       "2",
+		Board:       "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
+		Turn:        "b",
+		Black:       carol,
+		Red:         alice,
+		Winner:      "*",
+		Deadline:    types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		MoveCount:   0,
+		BeforeIndex: "1",
+		AfterIndex:  "3",
+		Wager:       46,
 	}, game2)
 	game3, found3 := keeper.GetStoredGame(ctx, "3")
 	require.True(t, found3)
 	require.EqualValues(t, types.StoredGame{
-		Index: "3",
-		Board: "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
-		Turn:  "b",
-		Black: alice,
-		Red:   bob,
-		Winner: "*",
-		Deadline:  types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		Index:       "3",
+		Board:       "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
+		Turn:        "b",
+		Black:       alice,
+		Red:         bob,
+		Winner:      "*",
+		Deadline:    types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		MoveCount:   0,
+		BeforeIndex: "2",
+		AfterIndex:  "-1",
+		Wager:       47,
 	}, game3)
 }
 
@@ -219,45 +256,60 @@ func TestCreate3GamesGetAll(t *testing.T) {
 		Creator: alice,
 		Black:   bob,
 		Red:     carol,
+		Wager:   45,
 	})
 	msgSrvr.CreateGame(context, &types.MsgCreateGame{
 		Creator: bob,
 		Black:   carol,
 		Red:     alice,
+		Wager:   46,
 	})
 	msgSrvr.CreateGame(context, &types.MsgCreateGame{
 		Creator: carol,
 		Black:   alice,
 		Red:     bob,
+		Wager:   47,
 	})
-	games := keeper.GetAllStoredGame(sdk.UnwrapSDKContext(context))
+	games := keeper.GetAllStoredGame(ctx)
 	require.Len(t, games, 3)
 	require.EqualValues(t, types.StoredGame{
-		Index: "1",
-		Board: "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
-		Turn:  "b",
-		Black: bob,
-		Red:   carol,
-		Winner: "*",
-		Deadline:  types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		Index:       "1",
+		Board:       "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
+		Turn:        "b",
+		Black:       bob,
+		Red:         carol,
+		Winner:      "*",
+		Deadline:    types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		MoveCount:   0,
+		BeforeIndex: "-1",
+		AfterIndex:  "2",
+		Wager:       45,
 	}, games[0])
 	require.EqualValues(t, types.StoredGame{
-		Index: "2",
-		Board: "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
-		Turn:  "b",
-		Black: carol,
-		Red:   alice,
-		Winner: "*",
-		Deadline:  types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		Index:       "2",
+		Board:       "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
+		Turn:        "b",
+		Black:       carol,
+		Red:         alice,
+		Winner:      "*",
+		Deadline:    types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		MoveCount:   0,
+		BeforeIndex: "1",
+		AfterIndex:  "3",
+		Wager:       46,
 	}, games[1])
 	require.EqualValues(t, types.StoredGame{
-		Index: "3",
-		Board: "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
-		Turn:  "b",
-		Black: alice,
-		Red:   bob,
-		Winner: "*",
-		Deadline:  types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		Index:       "3",
+		Board:       "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
+		Turn:        "b",
+		Black:       alice,
+		Red:         bob,
+		Winner:      "*",
+		Deadline:    types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		MoveCount:   0,
+		BeforeIndex: "2",
+		AfterIndex:  "-1",
+		Wager:       47,
 	}, games[2])
 }
 
@@ -272,6 +324,7 @@ func TestCreateGameFarFuture(t *testing.T) {
 		Creator: alice,
 		Black:   bob,
 		Red:     carol,
+		Wager:   45,
 	})
 	require.Nil(t, err)
 	require.EqualValues(t, types.MsgCreateGameResponse{
@@ -280,17 +333,38 @@ func TestCreateGameFarFuture(t *testing.T) {
 	systemInfo, found = keeper.GetSystemInfo(ctx)
 	require.True(t, found)
 	require.EqualValues(t, types.SystemInfo{
-		NextId: 1025,
+		NextId:        1025,
+		FifoHeadIndex: "1024",
+		FifoTailIndex: "1024",
 	}, systemInfo)
 	game1, found1 := keeper.GetStoredGame(ctx, "1024")
 	require.True(t, found1)
 	require.EqualValues(t, types.StoredGame{
-		Index: "1024",
-		Board: "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
-		Turn:  "b",
-		Black: bob,
-		Red:   carol,
-		Winner: "*",
-		Deadline:  types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		Index:       "1024",
+		Board:       "*b*b*b*b|b*b*b*b*|*b*b*b*b|********|********|r*r*r*r*|*r*r*r*r|r*r*r*r*",
+		Turn:        "b",
+		Black:       bob,
+		Red:         carol,
+		Winner:      "*",
+		Deadline:    types.FormatDeadline(ctx.BlockTime().Add(types.MaxTurnDuration)),
+		MoveCount:   0,
+		BeforeIndex: "-1",
+		AfterIndex:  "-1",
+		Wager:       45,
 	}, game1)
+}
+
+func TestSavedCreatedDeadlineIsParseable(t *testing.T) {
+	msgSrvr, keeper, context := setupMsgServerCreateGame(t)
+	ctx := sdk.UnwrapSDKContext(context)
+	msgSrvr.CreateGame(context, &types.MsgCreateGame{
+		Creator: alice,
+		Black:   bob,
+		Red:     carol,
+		Wager:   45,
+	})
+	game, found := keeper.GetStoredGame(ctx, "1")
+	require.True(t, found)
+	_, err := game.GetDeadlineAsTime()
+	require.Nil(t, err)
 }

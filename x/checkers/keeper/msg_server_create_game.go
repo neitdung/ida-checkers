@@ -30,6 +30,7 @@ func (k msgServer) CreateGame(goCtx context.Context, msg *types.MsgCreateGame) (
 		MoveCount: 0,
 		BeforeIndex: types.NoFifoIndex,
 		AfterIndex: types.NoFifoIndex,
+		Wager: msg.Wager,
 	}
 
 	err := storedGame.Validate()
@@ -41,13 +42,15 @@ func (k msgServer) CreateGame(goCtx context.Context, msg *types.MsgCreateGame) (
 	k.Keeper.SetStoredGame(ctx, storedGame)
 	systemInfo.NextId++
 	k.Keeper.SetSystemInfo(ctx, systemInfo)
-
+	ctx.GasMeter().ConsumeGas(types.CreateGameGas, "Create game")
+	
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(types.GameCreatedEventType,
 			sdk.NewAttribute(types.GameCreatedEventCreator, msg.Creator),
 			sdk.NewAttribute(types.GameCreatedEventGameIndex, newIndex),
 			sdk.NewAttribute(types.GameCreatedEventBlack, msg.Black),
 			sdk.NewAttribute(types.GameCreatedEventRed, msg.Red),
+			sdk.NewAttribute(types.GameCreatedEventWager, strconv.FormatUint(msg.Wager, 10)),
 		),
 	)
 
